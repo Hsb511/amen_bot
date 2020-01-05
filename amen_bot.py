@@ -155,6 +155,36 @@ def plt_streak(times, fig):
     streak_plot.invert_yaxis()
     streak_plot.set_xlabel('Nombre de jours consécutifs')
 
+""" The second command to show the amount of amens for one player """
+@client.command(pass_context=True)
+async def amensAmount(context, *player):
+    if (player == ()):
+        player = str(context.message.author)
+    else:
+        player = player[0]
+
+    if (times == {}):
+        # We get the last 23000 messages from the channel where the command has been called
+        async for x in client.logs_from(context.message.channel, 23000):
+            if (x.content != None):
+                # We filter and store the messages containing 'amen' and not sent by a bot
+                if "amen" in x.content.lower():
+                    if str(x.author) != '23-robot#3554':
+                        mgs.append(x)
+                        if not ((x.timestamp.minute == 22 and x.timestamp.hour == 22) or 'amen+' in x.content.lower() or 'amen +' in x.content.lower()):
+                            if x.author not in times:
+                                times[x.author] = [x.timestamp]
+                            else:
+                                times[x.author].append(x.timestamp)
+
+    found = False
+    for flock in times:
+        if player.lower() in str(flock).lower():
+            await client.say(str(len(times[flock])) + " amen(s) dit(s) au total pour " + str(flock).split("#")[0])
+            found = True
+
+    if not found :
+        await client.say(player + " n'a pas été trouvé parmis les membres de ce channel !")
 
 # Starts the bot
 client.run(TOKEN)
