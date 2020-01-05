@@ -1,25 +1,27 @@
 # Work with Python 3.6
 import asyncio
-from discord import Game
 from discord.ext.commands import Bot
-import json
 import matplotlib.pyplot as plt
 import numpy as np
 import time, datetime
 
+# Getting the discord's bot token that you can find here : https://discordapp.com/developers/applications/me
 f = open("bot.txt", "r")
 TOKEN = f.readline()
+
+# Setting the bot's command prefix
 BOT_PREFIX = ("?", "!")
 
+# Creating the bot client
 client = Bot(command_prefix=BOT_PREFIX)
 
-tableau = {}
 my_flocks = ["giorn", "Hsb511", "Marshall", "benzayolo", "p76dub", "Braing"]
 
+""" The first command to show the different stats """
 @client.command(pass_context=True)
-async def flocks(context):
-    mgs = [] #Empty list to put all the messages in the log
-    times = {}
+async def amenStats(context):
+    mgs = []    # Empty list to put all the messages in the log
+    times = {}  # Stores each datetime by members where a correct 'Amen' has been said
     async for x in client.logs_from(context.message.channel, 23000):
         if (x.content != None):
             if "amen" in x.content.lower():
@@ -30,7 +32,6 @@ async def flocks(context):
                             times[x.author] = [x.timestamp]
                         else:
                             times[x.author].append(x.timestamp)
-    #print([[k.content, str(k.author), k.timestamp] for k in mgs])
 
     for time in times:
         print(str(time))     
@@ -45,7 +46,7 @@ async def flocks(context):
 
     await client.send_file(context.message.channel,'test.png')
 
-
+""" Function used to plot the first graph : the monthly amount of correct 'amen' said """
 def plt_temporel(mgs, fig):
     dates = [datetime.date(2017, k, 23) for k in range (1, 13)] + [datetime.date(2018, k, 23) for k in range (1, 13)] + [datetime.date(2019, k, 23) for k in range (1, 13)] + [datetime.date(2020, k, 23) for k in range (1, 2)]
     flocks = {}
@@ -79,6 +80,7 @@ def plt_temporel(mgs, fig):
     temp_plot.grid(True)
     plt.subplots_adjust(wspace= 1.0)
 
+""" Function called to display the second graph to show the proportion of errors by members """
 def plt_fail(mgs, fig):
     fail_plot = fig.add_subplot(2, 2, 3)
 
@@ -109,6 +111,7 @@ def plt_fail(mgs, fig):
     fail_plot.set_title("Répartition des 'Amens' ratés : \n les 'Amen+' ou ceux à 23:22")
     plt.subplots_adjust(wspace= 1.0)
 
+""" Fuction used to format the value of a pie chart """
 def autopct_format(values):
     def my_format(pct):
         total = sum(values)
@@ -116,6 +119,7 @@ def autopct_format(values):
         return '{v:d}'.format(v=val)
     return my_format
 
+""" Function used to show the best streak e.g. the maximum of consecutive days a correct 'amen' has been said by a member """
 def plt_streak(times, fig):
     streak_plot = fig.add_subplot(2, 2, 4)
 
@@ -142,11 +146,11 @@ def plt_streak(times, fig):
                     people.append(str(flock).split("#")[0])
                 break
 
-    #print([(str(flock), flocks[flock][0]) for flock in flocks])
     streak_plot.set_title("Meilleure série de 'Amen' \n en jours consécutifs")
     streak_plot.barh(people, streak)
     streak_plot.invert_yaxis()
     streak_plot.set_xlabel('Nombre de jours consécutifs')
 
 
+# Starts the bot
 client.run(TOKEN)
