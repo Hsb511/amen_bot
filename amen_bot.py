@@ -17,13 +17,16 @@ client = Bot(command_prefix=BOT_PREFIX)
 
 my_flocks = ["giorn", "Hsb511", "Marshall", "benzayolo", "p76dub", "Braing"]
 
+mgs = []    # Empty list to put all the messages in the log
+times = {}  # Stores each datetime by members where a correct 'Amen' has been said
+
 """ The first command to show the different stats """
 @client.command(pass_context=True)
 async def amenStats(context):
-    mgs = []    # Empty list to put all the messages in the log
-    times = {}  # Stores each datetime by members where a correct 'Amen' has been said
+    # We get the last 23000 messages from the channel where the command has been called
     async for x in client.logs_from(context.message.channel, 23000):
         if (x.content != None):
+            # We filter and store the messages containing 'amen' and not sent by a bot
             if "amen" in x.content.lower():
                 if str(x.author) != '23-robot#3554':
                     mgs.append(x)
@@ -33,17 +36,18 @@ async def amenStats(context):
                         else:
                             times[x.author].append(x.timestamp)
 
-    for time in times:
-        print(str(time))     
-        print([k.strftime("%Y-%m-%d") for k in times[time]])
+    # We cleare the figure and create a new one
     plt.clf()
     fig = plt.figure()
+
+    # We call the 3 methods that create the graphs
     plt_temporel(mgs, fig)
     plt_fail(mgs, fig)
     plt_streak(times, fig)
+
+    # We store it in a png and we send it
     f = plt.gcf()
     f.savefig("test.png")
-
     await client.send_file(context.message.channel,'test.png')
 
 """ Function used to plot the first graph : the monthly amount of correct 'amen' said """
