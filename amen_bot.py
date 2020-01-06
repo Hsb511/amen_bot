@@ -30,7 +30,7 @@ async def amenStats(context):
             if "amen" in x.content.lower():
                 if str(x.author) != '23-robot#3554':
                     mgs.append(x)
-                    if not ((x.timestamp.minute == 22 and x.timestamp.hour == 22) or 'amen+' in x.content.lower() or 'amen +' in x.content.lower()):
+                    if not ((x.timestamp.minute == 22 and x.timestamp.hour == 22) or 'amen+' in x.content.lower() or 'amen +' in x.content.lower() or '!amen' in x.content):
                         if x.author not in times:
                             times[x.author] = [x.timestamp]
                         else:
@@ -171,18 +171,30 @@ async def amensAmount(context, *player):
                 if "amen" in x.content.lower():
                     if str(x.author) != '23-robot#3554':
                         mgs.append(x)
-                        if not ((x.timestamp.minute == 22 and x.timestamp.hour == 22) or 'amen+' in x.content.lower() or 'amen +' in x.content.lower()):
+                        if not ((x.timestamp.minute == 22 and x.timestamp.hour == 22) or 'amen+' in x.content.lower() or 'amen +' in x.content.lower() or '!amen' in x.content):
                             if x.author not in times:
                                 times[x.author] = [x.timestamp]
                             else:
                                 times[x.author].append(x.timestamp)
 
+    # Variable used to check if noone has been found
     found = False
+
+    # We iterate through all the time data
     for flock in times:
         if player.lower() in str(flock).lower():
-            await client.say(str(len(times[flock])) + " amen(s) dit(s) au total pour " + str(flock).split("#")[0])
+            amensAmount = 1
+            # We check all the data : if 2 amens have been said the same day, only one is counted
+            for i in range(len(times[flock]) - 1):
+                if not (times[flock][i+1].year == times[flock][i].year and times[flock][i+1].month == times[flock][i].month and times[flock][i+1].day == times[flock][i].day):
+                    # If it's a "correct" amen
+                    if (times[flock][i+1].minute == 23):
+                        amensAmount += 1
+            # For each member's nick that matches the input name we display their amens amount
+            await client.say(str(amensAmount) + " amen(s) dit(s) au total pour " + str(flock).split("#")[0])
             found = True
 
+    # If noone has been found we notify it
     if not found :
         await client.say(player + " n'a pas été trouvé parmis les membres de ce channel !")
 
