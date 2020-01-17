@@ -9,5 +9,5 @@ The main commands are :
 - **!amensAmount [member_nick]** : command that prints the amount of amen said for all member that have [member_nick] in their nick name. If nothing is specified, it will send the stats of the person that executed the command
 
 # Technical points
-This bot works with python 3.6 and mainly relies on [discord](https://pypi.org/project/discord.py/) and [matplotlib.pyplot](https://matplotlib.org/3.1.1/)
+This bot works with python 3.6 and mainly relies on [discord](https://pypi.org/project/discord.py/) (version 0.16.12) and [matplotlib.pyplot](https://matplotlib.org/2.2.3/) (version 2.2.3)
 To run a python bot, you just have to type `python amen_bot.py` in a bash on Linux or the cmd for Windows with python 3.6 and the libraries installed
