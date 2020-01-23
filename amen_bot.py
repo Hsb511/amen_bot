@@ -19,6 +19,7 @@ my_flocks = ["giorn", "Hsb511", "Marshall", "benzayolo", "p76dub", "Braing"]
 
 mgs = []    # Empty list to put all the messages in the log
 times = {}  # Stores each datetime by members where a correct 'Amen' has been said
+fails = {}  # Stores the datime by members of the failed 'Amen' (said too soon or too late)
 
 """ The first command to show the different stats """
 @client.command(pass_context=True)
@@ -87,33 +88,42 @@ def plt_temporel(mgs, fig):
 """ Function called to display the second graph to show the proportion of errors by members """
 def plt_fail(mgs, fig):
     fail_plot = fig.add_subplot(2, 2, 3)
-
-    flocks = {}
-    for message in mgs:
-        if not message.author in flocks and str(message.author) != '23-robot#3554':
-            flocks[message.author] = 0
-
-    for message in reversed(mgs):
-        if str(message.author) != '23-robot#3554':
-            if (message.timestamp.minute == 22 and message.timestamp.hour == 22) or 'amen+' in message.content.lower() or 'amen +' in message.content.lower():
-                flocks[message.author] += 1
     
+    # We gather the fails in a global variable "fails" 
+    gather_fails(mgs)
+
+    # We arange the data to prepare them for the graph
     errors = []
     people = []
     for my_flock in my_flocks:
-        for flock in flocks:
+        for flock in fails:
             if (my_flock in str(flock)):
-                if (flocks[flock] != 0):
-                    errors.append(flocks[flock])
+                failsAmount = len(fails[flock])
+                if (failsAmount != 0):
+                    errors.append(failsAmount)
                     people.append(str(flock).split("#")[0])
                 break
 
+    # We construct the pie chart and add it to the main figure
     texts = fail_plot.pie(errors, labels=people, shadow=True, autopct=autopct_format(errors), startangle=90)[1]
     for text in texts:
         text.set_fontsize(8)
     fail_plot.axis('equal')
     fail_plot.set_title("Répartition des 'Amens' ratés : \n les 'Amen+' ou ceux à 23:22")
     plt.subplots_adjust(wspace= 1.0)
+
+""" Function to gather failed Amen """
+def gather_fails(mgs):
+    if fails == {}:
+        for message in mgs:
+            if not message.author in fails and str(message.author) != '23-robot#3554':
+                fails[message.author] = []
+
+        for message in reversed(mgs):
+            if str(message.author) != '23-robot#3554':
+                if (message.timestamp.minute == 22 and message.timestamp.hour == 22) or 'amen+' in message.content.lower() or 'amen +' in message.content.lower():
+                    fails[message.author].append(message.timestamp)
+    
 
 """ Fuction used to format the value of a pie chart """
 def autopct_format(values):
@@ -186,6 +196,8 @@ async def amensAmount(context, *player):
             amensAmount = 1
             # We check all the data : if 2 amens have been said the same day, only one is counted
             for i in range(len(times[flock]) - 1):
+                print(times[flock])
+                print(len(times[flock]))
                 if not (times[flock][i+1].year == times[flock][i].year and times[flock][i+1].month == times[flock][i].month and times[flock][i+1].day == times[flock][i].day):
                     # If it's a "correct" amen
                     if (times[flock][i+1].minute == 23):
