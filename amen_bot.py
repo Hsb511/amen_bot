@@ -205,5 +205,45 @@ async def amensAmount(context, *player):
     if not found :
         await client.say(player + " n'a pas été trouvé parmis les membres de ce channel !")
 
+
+""" The third command to show the amount of fails for one player """
+@client.command(pass_context=True)
+async def failsAmount(context, *player):
+    if (player == ()):
+        player = str(context.message.author)
+    else:
+        player = player[0]
+
+    # We gather the data relative to the "amen" msgs and their time
+    if (times == {} or mgs == []):
+        # We get the last 23000 messages from the channel where the command has been called
+        async for x in client.logs_from(context.message.channel, 23000):
+            if (x.content != None):
+                # We filter and store the messages containing 'amen' and not sent by a bot
+                if "amen" in x.content.lower():
+                    if str(x.author) != '23-robot#3554':
+                        mgs.append(x)
+                        if not ((x.timestamp.minute == 22 and x.timestamp.hour == 22) or 'amen+' in x.content.lower() or 'amen +' in x.content.lower() or '!amen' in x.content):
+                            if x.author not in times:
+                                times[x.author] = [x.timestamp]
+                            else:
+                                times[x.author].append(x.timestamp)
+
+    gather_fails(mgs)
+
+    # Variable used to check if noone has been found
+    found = False
+
+    for flock in fails:
+        if player.lower() in str(flock).lower():
+            await client.say(str(flock).split("#")[0] + " s'est fail le : ")
+            for fail in fails[flock]:
+                await client.say("\t" + fail.strftime("%d/%m/%Y") + " à " + fail.strftime("%Hh%M"))
+    
+    # If noone has been found we notify it
+    if not found :
+        await client.say(player + " n'a pas été trouvé parmis les membres de ce channel !")
+
+
 # Starts the bot
 client.run(TOKEN)
