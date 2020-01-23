@@ -24,20 +24,10 @@ fails = {}  # Stores the datime by members of the failed 'Amen' (said too soon o
 """ The first command to show the different stats """
 @client.command(pass_context=True)
 async def amenStats(context):
-    # We get the last 23000 messages from the channel where the command has been called
-    async for x in client.logs_from(context.message.channel, 23000):
-        if (x.content != None):
-            # We filter and store the messages containing 'amen' and not sent by a bot
-            if "amen" in x.content.lower():
-                if str(x.author) != '23-robot#3554':
-                    mgs.append(x)
-                    if not ((x.timestamp.minute == 22 and x.timestamp.hour == 22) or 'amen+' in x.content.lower() or 'amen +' in x.content.lower() or '!amen' in x.content):
-                        if x.author not in times:
-                            times[x.author] = [x.timestamp]
-                        else:
-                            times[x.author].append(x.timestamp)
+    # We gather the data relative to the "amen" msgs and their time
+    gather_times(context)
 
-    # We cleare the figure and create a new one
+    # We clear the figure and create a new one
     plt.clf()
     fig = plt.figure()
 
@@ -50,6 +40,22 @@ async def amenStats(context):
     f = plt.gcf()
     f.savefig("test.png")
     await client.send_file(context.message.channel,'test.png')
+
+""" Function to gather time information """
+def gather_times(context):
+    if (times != {}):
+        # We get the last 23000 messages from the channel where the command has been called
+        async for x in client.logs_from(context.message.channel, 23000):
+            if (x.content != None):
+                # We filter and store the messages containing 'amen' and not sent by a bot
+                if "amen" in x.content.lower():
+                    if str(x.author) != '23-robot#3554':
+                        mgs.append(x)
+                        if not ((x.timestamp.minute == 22 and x.timestamp.hour == 22) or 'amen+' in x.content.lower() or 'amen +' in x.content.lower() or '!amen' in x.content):
+                            if x.author not in times:
+                                times[x.author] = [x.timestamp]
+                            else:
+                                times[x.author].append(x.timestamp)
 
 """ Function used to plot the first graph : the monthly amount of correct 'amen' said """
 def plt_temporel(mgs, fig):
@@ -173,19 +179,8 @@ async def amensAmount(context, *player):
     else:
         player = player[0]
 
-    if (times == {}):
-        # We get the last 23000 messages from the channel where the command has been called
-        async for x in client.logs_from(context.message.channel, 23000):
-            if (x.content != None):
-                # We filter and store the messages containing 'amen' and not sent by a bot
-                if "amen" in x.content.lower():
-                    if str(x.author) != '23-robot#3554':
-                        mgs.append(x)
-                        if not ((x.timestamp.minute == 22 and x.timestamp.hour == 22) or 'amen+' in x.content.lower() or 'amen +' in x.content.lower() or '!amen' in x.content):
-                            if x.author not in times:
-                                times[x.author] = [x.timestamp]
-                            else:
-                                times[x.author].append(x.timestamp)
+    # We gather the data relative to the "amen" msgs and their time
+    gather_times(context)
 
     # Variable used to check if noone has been found
     found = False
