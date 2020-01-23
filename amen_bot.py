@@ -43,7 +43,7 @@ async def amenStats(context):
 
 """ Function to gather time information """
 def gather_times(context):
-    if (times != {}):
+    if (times == {} or mgs == []):
         # We get the last 23000 messages from the channel where the command has been called
         async for x in client.logs_from(context.message.channel, 23000):
             if (x.content != None):
