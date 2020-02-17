@@ -183,6 +183,8 @@ def plt_streak(times, fig):
     streak_plot.barh(people, streak)
     streak_plot.invert_yaxis()
     streak_plot.set_xlabel('Nombre de jours consécutifs')
+    for i, v in enumerate(streak):
+        streak_plot.text(v + 3, i + .25, str(v), fontweight='bold')
 
 """ The second command to show the amount of amens for one player """
 @client.command(pass_context=True)
