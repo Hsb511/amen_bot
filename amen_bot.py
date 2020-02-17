@@ -119,22 +119,30 @@ def plt_fail(mgs, fig):
 """ Function to gather failed Amen """
 def gather_fails(mgs):
     if fails == {}:
+        today_amen = {} # dict of newest correct amen by member
+
         for message in mgs:
             if not message.author in fails and str(message.author) != '23-robot#3554':
                 fails[message.author] = []
 
+
         for message in reversed(mgs):
+
             if str(message.author) != '23-robot#3554':
-                if 'amen+' in message.content.lower():
-                    print(message.content.lower().split('amen+')[1])
-                    paris = pytz.timezone("Europe/Paris")
-                    print(message.timestamp.astimezone(paris))
-                    print(calendar.timegm(message.timestamp.timetuple()))
-                    #print(abs(23 - int(message.content.lower().split('amen+')[1])) <= 3)
-                    fails[message.author].append(message.timestamp)
-                elif (message.timestamp.minute == 22 and message.timestamp.hour == 22) or 'amen +' in message.content.lower():
-                    fails[message.author].append(message.timestamp)
-    
+                if "amen" in message.content.lower():
+                    if (message.timestamp.hour == 22 or message.timestamp.hour == 23) and message.timestamp.minute == 23:
+                        if (not message.author in today_amen):
+                            today_amen[message.author] = [str(message.timestamp.year)+str(message.timestamp.month)+str(message.timestamp.day)]
+                        else:
+                            today_amen[message.author].append(str(message.timestamp.year)+str(message.timestamp.month)+str(message.timestamp.day))
+                    if message.timestamp.hour == 22 or message.timestamp.hour == 23:
+                        if message.timestamp.minute == 22 or message.timestamp.minute == 24 or message.timestamp.minute == 25:
+                            fails[message.author].append(message.timestamp)
+
+        for member in fails:
+            for fail in fails[member]:
+                if str(fail.year)+str(fail.month)+str(fail.day) in today_amen[member]:
+                    fails[member].remove(fail)
 
 """ Fuction used to format the value of a pie chart """
 def autopct_format(values):
