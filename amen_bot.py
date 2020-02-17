@@ -3,7 +3,8 @@ import asyncio
 from discord.ext.commands import Bot
 import matplotlib.pyplot as plt
 import numpy as np
-import time, datetime
+import time, datetime, calendar
+import pytz
 
 # Getting the discord's bot token that you can find here : https://discordapp.com/developers/applications/me
 f = open("bot.txt", "r")
@@ -24,10 +25,20 @@ fails = {}  # Stores the datime by members of the failed 'Amen' (said too soon o
 """ The first command to show the different stats """
 @client.command(pass_context=True)
 async def amenStats(context):
-    # We gather the data relative to the "amen" msgs and their time
-    gather_times(context)
+    # We get the last 23000 messages from the channel where the command has been called
+    async for x in client.logs_from(context.message.channel, 23000):
+        if (x.content != None):
+            # We filter and store the messages containing 'amen' and not sent by a bot
+            if "amen" in x.content.lower():
+                if str(x.author) != '23-robot#3554':
+                    mgs.append(x)
+                    if not ((x.timestamp.minute == 22 and x.timestamp.hour == 22) or 'amen+' in x.content.lower() or 'amen +' in x.content.lower() or '!amen' in x.content):
+                        if x.author not in times:
+                            times[x.author] = [x.timestamp]
+                        else:
+                            times[x.author].append(x.timestamp)
 
-    # We clear the figure and create a new one
+    # We cleare the figure and create a new one
     plt.clf()
     fig = plt.figure()
 
@@ -41,22 +52,6 @@ async def amenStats(context):
     f.savefig("test.png")
     await client.send_file(context.message.channel,'test.png')
 
-""" Function to gather time information """
-def gather_times(context):
-    if (times == {} or mgs == []):
-        # We get the last 23000 messages from the channel where the command has been called
-        async for x in client.logs_from(context.message.channel, 23000):
-            if (x.content != None):
-                # We filter and store the messages containing 'amen' and not sent by a bot
-                if "amen" in x.content.lower():
-                    if str(x.author) != '23-robot#3554':
-                        mgs.append(x)
-                        if not ((x.timestamp.minute == 22 and x.timestamp.hour == 22) or 'amen+' in x.content.lower() or 'amen +' in x.content.lower() or '!amen' in x.content):
-                            if x.author not in times:
-                                times[x.author] = [x.timestamp]
-                            else:
-                                times[x.author].append(x.timestamp)
-
 """ Function used to plot the first graph : the monthly amount of correct 'amen' said """
 def plt_temporel(mgs, fig):
     dates = [datetime.date(2017, k, 23) for k in range (1, 13)] + [datetime.date(2018, k, 23) for k in range (1, 13)] + [datetime.date(2019, k, 23) for k in range (1, 13)] + [datetime.date(2020, k, 23) for k in range (1, 2)]
@@ -67,7 +62,10 @@ def plt_temporel(mgs, fig):
 
     for message in reversed(mgs):
         if str(message.author) != '23-robot#3554' and message.timestamp.minute == 23:
-            flocks[message.author][(message.timestamp.year - 2017) * 12 + message.timestamp.month - 1] += 1
+            try:
+                flocks[message.author][(message.timestamp.year - 2017) * 12 + message.timestamp.month - 1] += 1
+            except:
+                print("une erreur est survenue")
 
     half_dates = []
     for i in range(len(dates)):
@@ -127,7 +125,14 @@ def gather_fails(mgs):
 
         for message in reversed(mgs):
             if str(message.author) != '23-robot#3554':
-                if (message.timestamp.minute == 22 and message.timestamp.hour == 22) or 'amen+' in message.content.lower() or 'amen +' in message.content.lower():
+                if 'amen+' in message.content.lower():
+                    print(message.content.lower().split('amen+')[1])
+                    paris = pytz.timezone("Europe/Paris")
+                    print(message.timestamp.astimezone(paris))
+                    print(calendar.timegm(message.timestamp.timetuple()))
+                    #print(abs(23 - int(message.content.lower().split('amen+')[1])) <= 3)
+                    fails[message.author].append(message.timestamp)
+                elif (message.timestamp.minute == 22 and message.timestamp.hour == 22) or 'amen +' in message.content.lower():
                     fails[message.author].append(message.timestamp)
     
 
@@ -179,8 +184,19 @@ async def amensAmount(context, *player):
     else:
         player = player[0]
 
-    # We gather the data relative to the "amen" msgs and their time
-    gather_times(context)
+    if (times == {}):
+        # We get the last 23000 messages from the channel where the command has been called
+        async for x in client.logs_from(context.message.channel, 23000):
+            if (x.content != None):
+                # We filter and store the messages containing 'amen' and not sent by a bot
+                if "amen" in x.content.lower():
+                    if str(x.author) != '23-robot#3554':
+                        mgs.append(x)
+                        if not ((x.timestamp.minute == 22 and x.timestamp.hour == 22) or 'amen+' in x.content.lower() or 'amen +' in x.content.lower() or '!amen' in x.content):
+                            if x.author not in times:
+                                times[x.author] = [x.timestamp]
+                            else:
+                                times[x.author].append(x.timestamp)
 
     # Variable used to check if noone has been found
     found = False
