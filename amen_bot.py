@@ -54,7 +54,7 @@ async def amenStats(context):
 
 """ Function used to plot the first graph : the monthly amount of correct 'amen' said """
 def plt_temporel(mgs, fig):
-    dates = [datetime.date(2017, k, 23) for k in range (1, 13)] + [datetime.date(2018, k, 23) for k in range (1, 13)] + [datetime.date(2019, k, 23) for k in range (1, 13)] + [datetime.date(2020, k, 23) for k in range (1, 2)]
+    dates = [datetime.date(2017, k, 23) for k in range (1, 13)] + [datetime.date(2018, k, 23) for k in range (1, 13)] + [datetime.date(2019, k, 23) for k in range (1, 13)] + [datetime.date(2020, k, 23) for k in range (1, 4)]
     flocks = {}
     for message in mgs:
         if not message.author in flocks and str(message.author) != '23-robot#3554':
@@ -121,13 +121,14 @@ def gather_fails(mgs):
     if fails == {}:
         today_amen = {} # dict of newest correct amen by member
 
+        # We gather the authors
         for message in mgs:
             if not message.author in fails and str(message.author) != '23-robot#3554':
                 fails[message.author] = []
 
 
+        # we iterate through all the messages
         for message in reversed(mgs):
-
             if str(message.author) != '23-robot#3554':
                 if "amen" in message.content.lower():
                     if (message.timestamp.hour == 22 or message.timestamp.hour == 23) and message.timestamp.minute == 23:
@@ -139,10 +140,15 @@ def gather_fails(mgs):
                         if message.timestamp.minute == 22 or message.timestamp.minute == 24 or message.timestamp.minute == 25:
                             fails[message.author].append(message.timestamp)
 
+        # We check that if a correct amen has been said, an amen said shortly after that is not a fail
         for member in fails:
+            previous_fail = datetime.date(2323, 11, 23)
             for fail in fails[member]:
-                if str(fail.year)+str(fail.month)+str(fail.day) in today_amen[member]:
+                # we check if a correct amen has not been said today or if another fail has been said today, if so we remove the fail
+                if (str(fail.year)+str(fail.month)+str(fail.day) in today_amen[member] and fail.minute != 22) or (previous_fail.year == fail.year and previous_fail.month == fail.month and previous_fail.day == fail.day):
                     fails[member].remove(fail)
+
+                previous_fail = fail
 
 """ Fuction used to format the value of a pie chart """
 def autopct_format(values):
