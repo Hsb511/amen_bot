@@ -7,6 +7,7 @@ The main commands are :
   - bottom left shows the proportion of 'Amen' said not exactly at 23:23 (23:22 or after 23:23)
   - bottom right : a bar graph that shows the best streak, meaning the best consecutive amount of days where one person said a correct amen
 - **!amensAmount [member_nick]** : command that prints the amount of amen said for all member that have [member_nick] in their nick name. If nothing is specified, it will send the stats of the person that executed the command
+- **!failsAmount [member_nick]** : command that prints the amount of fails, e.g. an amen not said at 23:23 (often 23:22, 23:24 or 23:25) said for all member that have [member_nick] in their nick name. If nothing is specified, it will send the stats of the person that executed the command
 
 # Technical points
 This bot works with python 3.6 and mainly relies on [discord](https://pypi.org/project/discord.py/) (version 0.16.12) and [matplotlib.pyplot](https://matplotlib.org/2.2.3/) (version 2.2.3)
