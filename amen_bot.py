@@ -125,7 +125,9 @@ async def failsAmount(context, *player):
                             else:
                                 times[x.author].append(x.timestamp)
 
-    gathered_fails = gather_fails(mgs, fails)
+
+    global fails 
+    fails = gather_fails(mgs, fails)
 
     # Variable used to check if noone has been found
     found = False
