@@ -125,7 +125,6 @@ async def failsAmount(context, *player):
                             else:
                                 times[x.author].append(x.timestamp)
 
-
     global fails 
     fails = gather_fails(mgs, fails)
 
@@ -134,6 +133,7 @@ async def failsAmount(context, *player):
 
     for flock in fails:
         if player.lower() in str(flock).lower():
+            found = True
             await client.say(str(flock).split("#")[0] + " s'est fail le : ")
             for fail in fails[flock]:
                 await client.say("\t" + fail.strftime("%d/%m/%Y") + " à " + fail.strftime("%Hh%M"))
