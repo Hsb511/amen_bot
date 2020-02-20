@@ -33,8 +33,8 @@ def plt_temporal(mgs, fig, my_flocks):
     for my_flock in my_flocks:
         for flock in flocks:
             if (my_flock in str(flock)):
-                temp_plot.plot(dates, flocks[flock], marker='+', linestyle='-', label=str(flock).split("#")[0])
+                temp_plot.plot(dates, flocks[flock], marker='+', linestyle='-', label=str(flock).split("#")[0]+ ": "+str(sum(flocks[flock])))
                 break
-    temp_plot.legend(ncol=2)
+    temp_plot.legend(ncol=2, prop={'size': 6})
     temp_plot.grid(True)
     plt.subplots_adjust(wspace= 1.0)
