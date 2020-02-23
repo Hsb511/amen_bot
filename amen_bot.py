@@ -1,6 +1,7 @@
 # Work with Python 3.6
 import asyncio
 from discord.ext.commands import Bot
+import discord
 import matplotlib.pyplot as plt
 import time, datetime, calendar
 import pytz
@@ -12,13 +13,15 @@ from streak_graph import plt_streak
 
 # Getting the discord's bot token that you can find here : https://discordapp.com/developers/applications/me
 f = open("bot.txt", "r")
-TOKEN = f.readline()
+TOKEN = f.readline().split("\n")[0]
+CHANNEL_ID = f.readline()
 
 # Setting the bot's command prefix
 BOT_PREFIX = ("?", "!")
 
 # Creating the bot client
 client = Bot(command_prefix=BOT_PREFIX)
+print("*** The bot " + TOKEN + " is connected ***")
 
 my_flocks = ["giorn", "Hsb511", "Marshall", "benzayolo", "p76dub", "Braing"]
 
@@ -26,11 +29,22 @@ mgs = []    # Empty list to put all the messages in the log
 times = {}  # Stores each datetime by members where a correct 'Amen' has been said
 fails = {}  # Stores the datime by members of the failed 'Amen' (said too soon or too late)
 
+def get_channel_from_context(context):
+    sent_channel = context.message.channel
+    all_channels = sent_channel.server.channels
+    for channel in all_channels:
+        if channel.id == CHANNEL_ID:
+            return channel
+    return sent_channel
+
+
 """ The first command to show the different stats """
 @client.command(pass_context=True)
 async def amenStats(context):
+    print("*** the command !amenStats has been requested ***")
+    channel_to_read = get_channel_from_context(context)
     # We get the last 23000 messages from the channel where the command has been called
-    async for x in client.logs_from(context.message.channel, 23000):
+    async for x in client.logs_from(channel_to_read, 23000):
         if (x.content != None):
             # We filter and store the messages containing 'amen' and not sent by a bot
             if "amen" in x.content.lower():
@@ -59,6 +73,8 @@ async def amenStats(context):
 """ The second command to show the amount of amens for one player """
 @client.command(pass_context=True)
 async def amensAmount(context, *player):
+    print("*** the command !amensAmount has been requested for the players containing '" + player + "' ***")
+    channel_to_read = get_channel_from_context(context)
     if (player == ()):
         player = str(context.message.author)
     else:
@@ -66,7 +82,7 @@ async def amensAmount(context, *player):
 
     if (times == {}):
         # We get the last 23000 messages from the channel where the command has been called
-        async for x in client.logs_from(context.message.channel, 23000):
+        async for x in client.logs_from(channel_to_read, 23000):
             if (x.content != None):
                 # We filter and store the messages containing 'amen' and not sent by a bot
                 if "amen" in x.content.lower():
@@ -105,6 +121,8 @@ async def amensAmount(context, *player):
 """ The third command to show the amount of fails for one player """
 @client.command(pass_context=True)
 async def failsAmount(context, *player):
+    print("*** the command !failsAmount has been requested for the players containing '" + player + "' ***")
+    channel_to_read = get_channel_from_context(context)
     if (player == ()):
         player = str(context.message.author)
     else:
@@ -113,7 +131,7 @@ async def failsAmount(context, *player):
     # We gather the data relative to the "amen" msgs and their time
     if (times == {} or mgs == []):
         # We get the last 23000 messages from the channel where the command has been called
-        async for x in client.logs_from(context.message.channel, 23000):
+        async for x in client.logs_from(channel_to_read, 23000):
             if (x.content != None):
                 # We filter and store the messages containing 'amen' and not sent by a bot
                 if "amen" in x.content.lower():
@@ -141,6 +159,8 @@ async def failsAmount(context, *player):
     # If noone has been found we notify it
     if not found :
         await client.say(player + " n'a pas été trouvé parmis les membres de ce channel !")
+
+#TODO create a command that displays only the temporal graph by chosing the starting and ending month by default all the period is shown
 
 
 # Starts the bot
