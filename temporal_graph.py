@@ -4,6 +4,7 @@ import numpy as np
 
 """ Function used to plot the first graph : the monthly amount of correct 'amen' said """
 def plt_temporal(mgs, fig, my_flocks):
+    #TODO Update the dates array creation --> take all the months from a starting month to an ending month
     dates = [datetime.date(2017, k, 23) for k in range (1, 13)] + [datetime.date(2018, k, 23) for k in range (1, 13)] + [datetime.date(2019, k, 23) for k in range (1, 13)] + [datetime.date(2020, k, 23) for k in range (1, 4)]
     flocks = {}
     for message in mgs:
@@ -26,8 +27,8 @@ def plt_temporal(mgs, fig, my_flocks):
     temp_plot.set_xticklabels([str(half_date.month) + " / " + str(half_date.year)[2:5] for half_date in half_dates], rotation=45, fontsize=8, horizontalalignment="center")
     temp_plot.set_title("Répartition temporelle des 'Amen' dits sur ce channel discord")
     temp_plot.set_xlabel("mois")
-    temp_plot.set_yticks(np.arange(1, 22, step=2))
-    temp_plot.set_yticklabels(np.arange(1, 22, step=2), fontsize=8,)
+    temp_plot.set_yticks(np.arange(1, 31, step=3))
+    temp_plot.set_yticklabels(np.arange(1, 31, step=3), fontsize=8,)
     temp_plot.set_ylabel("nombre de 'Amen' par mois")
 
     for my_flock in my_flocks:
