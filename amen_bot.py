@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
+#! /usr/bin/env python3
 # Work with Python 3.6
+import json
 import asyncio
 from discord.ext.commands import Bot
 import discord
@@ -6,57 +9,43 @@ import matplotlib.pyplot as plt
 import time, datetime, calendar
 import pytz
 
-from temporal_graph import plt_temporal
-from fails_graph import plt_fail
-from fails_manager import gather_fails
-from streak_graph import plt_streak
+
+# Load the bot's configuration
+with open("resources/configuration/config.json") as f:
+    CONFIGURATION = json.load(f)
 
 # Getting the discord's bot token that you can find here : https://discordapp.com/developers/applications/me
-f = open("bot.txt", "r")
-TOKEN = f.readline().split("\n")[0]
-CHANNEL_ID = f.readline()
-
-# Setting the bot's command prefix
-BOT_PREFIX = ("?", "!")
+with open("resources/configuration/bot.txt", "r") as f:
+    TOKEN = f.readline()
 
 # Creating the bot client
-client = Bot(command_prefix=BOT_PREFIX)
-print("*** The bot " + TOKEN + " is connected ***")
-
-my_flocks = ["giorn", "Hsb511", "Marshall", "benzayolo", "p76dub", "Braing"]
+client = Bot(command_prefix=CONFIGURATION['cmd_prefix'])
 
 mgs = []    # Empty list to put all the messages in the log
 times = {}  # Stores each datetime by members where a correct 'Amen' has been said
 fails = {}  # Stores the datime by members of the failed 'Amen' (said too soon or too late)
 
-def get_channel_from_context(context):
-    sent_channel = context.message.channel
-    all_channels = sent_channel.server.channels
-    for channel in all_channels:
-        if channel.id == CHANNEL_ID:
-            return channel
-    return sent_channel
 
-
-""" The first command to show the different stats """
-@client.command(pass_context=True)
-async def amenStats(context):
-    print("*** the command !amenStats has been requested ***")
-    channel_to_read = get_channel_from_context(context)
-    # We get the last 23000 messages from the channel where the command has been called
-    async for x in client.logs_from(channel_to_read, 23000):
+async def fill_times(context):
+    """ Fill the ``times`` variable with data retrieved from the channel's messages history."""
+    # We get the last max_msg messages from the channel where the command has been called
+    async for x in client.logs_from(context.message.channel, CONFIGURATION['max_msg']):
         if (x.content != None):
             # We filter and store the messages containing 'amen' and not sent by a bot
             if "amen" in x.content.lower():
-                if str(x.author) != '23-robot#3554':
+                if str(x.author) not in CONFIGURATION['excluded_users']:
                     mgs.append(x)
                     if not ((x.timestamp.minute == 22 and x.timestamp.hour == 22) or 'amen+' in x.content.lower() or 'amen +' in x.content.lower() or '!amen' in x.content):
-                        if x.author not in times:
-                            times[x.author] = [x.timestamp]
-                        else:
-                            times[x.author].append(x.timestamp)
+                        u_times = times.setdefault(x.author, [])
+                        u_times.append(x.timestamp)
 
-    # We cleare the figure and create a new one
+
+@client.command(pass_context=True)
+async def amenStats(context):
+    """ The first command to show the different stats """
+    await fill_times(context)
+    
+    # We clear the figure and create a new one
     plt.clf()
     fig = plt.figure()
 
@@ -67,32 +56,157 @@ async def amenStats(context):
 
     # We store it in a png and we send it
     f = plt.gcf()
-    f.savefig("test.png")
-    await client.send_file(context.message.channel,'test.png')
+    f.savefig(CONFIGURATION['picture_name'])
+    await client.send_file(context.message.channel, CONFIGURATION['picture_name'])
 
-""" The second command to show the amount of amens for one player """
+def plt_temporel(mgs, fig):
+    """ Function used to plot the first graph : the monthly amount of correct 'amen' said """
+    dates = [datetime.date(2017, k, 23) for k in range (1, 13)] + [datetime.date(2018, k, 23) for k in range (1, 13)] + [datetime.date(2019, k, 23) for k in range (1, 13)] + [datetime.date(2020, k, 23) for k in range (1, 4)]
+    flocks = {}
+    for message in mgs:
+        if not message.author in flocks and str(message.author) not in CONFIGURATION['excluded_users']:
+            flocks[message.author] = [0 for k in range(len(dates))]
+
+    for message in reversed(mgs):
+        if str(message.author) not in CONFIGURATION['excluded_users'] and message.timestamp.minute == 23:
+            try:
+                flocks[message.author][(message.timestamp.year - 2017) * 12 + message.timestamp.month - 1] += 1
+            except:
+                print("une erreur est survenue")
+
+    half_dates = []
+    for i in range(len(dates)):
+        if (i%2 == 0):
+            half_dates.append(dates[i])
+    temp_plot = fig.add_subplot(3, 1, 1)
+    temp_plot.set_xticks(half_dates)
+    temp_plot.set_xticklabels([str(half_date.month) + " / " + str(half_date.year)[2:5] for half_date in half_dates], rotation=45, fontsize=8, horizontalalignment="center")
+    temp_plot.set_title("Répartition temporelle des 'Amen' dits sur ce channel discord")
+    temp_plot.set_xlabel("mois")
+    temp_plot.set_yticks(np.arange(1, 22, step=2))
+    temp_plot.set_yticklabels(np.arange(1, 22, step=2), fontsize=8,)
+    temp_plot.set_ylabel("nombre de 'Amen' par mois")
+
+    for my_flock in CONFIGURATION['flocks']:
+        for flock in flocks:
+            if (my_flock in str(flock)):
+                temp_plot.plot(dates, flocks[flock], marker='+', linestyle='-', label=str(flock).split("#")[0])
+                break
+    temp_plot.legend(ncol=2)
+    temp_plot.grid(True)
+    plt.subplots_adjust(wspace= 1.0)
+
+def plt_fail(mgs, fig):
+    """ Function called to display the second graph to show the proportion of errors by members """
+    fail_plot = fig.add_subplot(2, 2, 3)
+    
+    # We gather the fails in a global variable "fails" 
+    gather_fails(mgs)
+
+    # We arange the data to prepare them for the graph
+    errors = []
+    people = []
+    for my_flock in CONFIGURATION['flocks']:
+        for flock in fails:
+            if (my_flock in str(flock)):
+                failsAmount = len(fails[flock])
+                if (failsAmount != 0):
+                    errors.append(failsAmount)
+                    people.append(str(flock).split("#")[0])
+                break
+
+    # We construct the pie chart and add it to the main figure
+    texts = fail_plot.pie(errors, labels=people, shadow=True, autopct=autopct_format(errors), startangle=90)[1]
+    for text in texts:
+        text.set_fontsize(8)
+    fail_plot.axis('equal')
+    fail_plot.set_title("Répartition des 'Amens' ratés : \n les 'Amen+' ou ceux à 23:22")
+    plt.subplots_adjust(wspace= 1.0)
+
+def gather_fails(mgs):
+    """ Function to gather failed Amen """
+    if fails == {}:
+        today_amen = {} # dict of newest correct amen by member
+
+        # We gather the authors
+        for message in mgs:
+            if not message.author in fails and str(message.author) != '23-robot#3554':
+                fails[message.author] = []
+
+
+        # we iterate through all the messages
+        for message in reversed(mgs):
+            if str(message.author) != '23-robot#3554':
+                if "amen" in message.content.lower():
+                    if (message.timestamp.hour == 22 or message.timestamp.hour == 23) and message.timestamp.minute == 23:
+                        u_today_amen = today_amen.setdefault(message.author, [])
+                        u_today_amen.append(str(message.timestamp.year)+str(message.timestamp.month)+str(message.timestamp.day))
+                    if message.timestamp.hour == 22 or message.timestamp.hour == 23:
+                        if message.timestamp.minute == 22 or message.timestamp.minute == 24 or message.timestamp.minute == 25:
+                            fails[message.author].append(message.timestamp)
+
+        # We check that if a correct amen has been said, an amen said shortly after that is not a fail
+        for member in fails:
+            previous_fail = datetime.date(2323, 11, 23)
+            for fail in fails[member]:
+                # we check if a correct amen has not been said today or if another fail has been said today, if so we remove the fail
+                if (str(fail.year)+str(fail.month)+str(fail.day) in today_amen[member] and fail.minute != 22) or (previous_fail.year == fail.year and previous_fail.month == fail.month and previous_fail.day == fail.day):
+                    fails[member].remove(fail)
+
+                previous_fail = fail
+
+def autopct_format(values):
+    """ Fuction used to format the value of a pie chart """
+    def my_format(pct):
+        total = sum(values)
+        val = int(round(pct*total/100.0))
+        return '{v:d}'.format(v=val)
+    return my_format
+
+def plt_streak(times, fig):
+    """ Function used to show the best streak e.g. the maximum of consecutive days a correct 'amen' has been said by a member """
+    streak_plot = fig.add_subplot(2, 2, 4)
+
+    flocks = {}
+
+    for flock in times:
+        flocks[flock] = [0, times[flock][0], 1]
+        for time in times[flock]:
+            if ((flocks[flock][1] - time).days == 0 and (flocks[flock][1] - time).seconds > 86300) or ((flocks[flock][1] - time).days == 1 and (flocks[flock][1] - time).seconds < 61):
+                flocks[flock][2] += 1
+            else:
+                if flocks[flock][0] < flocks[flock][2]:
+                    flocks[flock][0] = flocks[flock][2]
+                flocks[flock][2] = 1
+            flocks[flock][1] = time
+
+    streak = []
+    people = []
+    for my_flock in CONFIGURATION['flocks']:
+        for flock in flocks:
+            if (my_flock in str(flock)):
+                if (flocks[flock] != 0):
+                    streak.append(flocks[flock][0])
+                    people.append(str(flock).split("#")[0])
+                break
+
+    streak_plot.set_title("Meilleure série de 'Amen' \n en jours consécutifs")
+    streak_plot.barh(people, streak)
+    streak_plot.invert_yaxis()
+    streak_plot.set_xlabel('Nombre de jours consécutifs')
+    for i, v in enumerate(streak):
+        streak_plot.text(v + 3, i + .25, str(v), fontweight='bold')
+
 @client.command(pass_context=True)
 async def amensAmount(context, *player):
-    print("*** the command !amensAmount has been requested for the players containing '" + player + "' ***")
-    channel_to_read = get_channel_from_context(context)
+    """ The second command to show the amount of amens for one player """
     if (player == ()):
         player = str(context.message.author)
     else:
         player = player[0]
 
     if (times == {}):
-        # We get the last 23000 messages from the channel where the command has been called
-        async for x in client.logs_from(channel_to_read, 23000):
-            if (x.content != None):
-                # We filter and store the messages containing 'amen' and not sent by a bot
-                if "amen" in x.content.lower():
-                    if str(x.author) != '23-robot#3554':
-                        mgs.append(x)
-                        if not ((x.timestamp.minute == 22 and x.timestamp.hour == 22) or 'amen+' in x.content.lower() or 'amen +' in x.content.lower() or '!amen' in x.content):
-                            if x.author not in times:
-                                times[x.author] = [x.timestamp]
-                            else:
-                                times[x.author].append(x.timestamp)
+        await fill_times(context)
 
     # Variable used to check if noone has been found
     found = False
@@ -118,30 +232,17 @@ async def amensAmount(context, *player):
         await client.say(player + " n'a pas été trouvé parmis les membres de ce channel !")
 
 
-""" The third command to show the amount of fails for one player """
 @client.command(pass_context=True)
 async def failsAmount(context, *player):
-    print("*** the command !failsAmount has been requested for the players containing '" + player + "' ***")
-    channel_to_read = get_channel_from_context(context)
-    if (player == ()):
+    """ The third command to show the amount of fails for one player """
+    if not player:
         player = str(context.message.author)
     else:
         player = player[0]
 
     # We gather the data relative to the "amen" msgs and their time
     if (times == {} or mgs == []):
-        # We get the last 23000 messages from the channel where the command has been called
-        async for x in client.logs_from(channel_to_read, 23000):
-            if (x.content != None):
-                # We filter and store the messages containing 'amen' and not sent by a bot
-                if "amen" in x.content.lower():
-                    if str(x.author) != '23-robot#3554':
-                        mgs.append(x)
-                        if not ((x.timestamp.minute == 22 and x.timestamp.hour == 22) or 'amen+' in x.content.lower() or 'amen +' in x.content.lower() or '!amen' in x.content):
-                            if x.author not in times:
-                                times[x.author] = [x.timestamp]
-                            else:
-                                times[x.author].append(x.timestamp)
+        await fill_times(context)
 
     global fails 
     fails = gather_fails(mgs, fails)
@@ -156,7 +257,7 @@ async def failsAmount(context, *player):
             for fail in fails[flock]:
                 await client.say("\t" + fail.strftime("%d/%m/%Y") + " à " + fail.strftime("%Hh%M"))
     
-    # If noone has been found we notify it
+    # If none has been found we notify it
     if not found :
         await client.say(player + " n'a pas été trouvé parmis les membres de ce channel !")
 

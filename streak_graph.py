@@ -8,6 +8,7 @@ def plt_streak(times, fig, my_flocks):
 
     for flock in times:
         flocks[flock] = [0, times[flock][0], 1]
+        print(times[flock])
         for time in times[flock]:
             if ((flocks[flock][1] - time).days == 0 and (flocks[flock][1] - time).seconds > 86300) or ((flocks[flock][1] - time).days == 1 and (flocks[flock][1] - time).seconds < 61):
                 flocks[flock][2] += 1
@@ -27,6 +28,7 @@ def plt_streak(times, fig, my_flocks):
                     people.append(str(flock).split("#")[0])
                 break
 
+    print(streak)
     streak_plot.set_title("Meilleure série de 'Amen' \n en jours consécutifs")
     streak_plot.barh(people, streak)
     streak_plot.invert_yaxis()
