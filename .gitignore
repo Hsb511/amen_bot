@@ -1,0 +1,9 @@
+# Virtual environment
+venv/
+
+# Python bytecode
+*.pyc
+__pycache__/
+
+# VSCode project files
+.vscode/

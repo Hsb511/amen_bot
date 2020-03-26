@@ -1,0 +1,7 @@
+{
+    "flocks": ["giorn", "Hsb511", "Marshall", "benzayolo", "p76dub", "Braing"],
+    "excluded_users": ["23-robot#3554"],
+    "cmd_prefix": ["!", "?"],
+    "max_msg" : 23000,
+    "picture_name": "test.png"
+}
