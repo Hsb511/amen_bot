@@ -7,6 +7,7 @@ from discord.ext.commands import Bot
 import discord
 import matplotlib.pyplot as plt
 import time, datetime, calendar
+import numpy as np
 import pytz
 
 
@@ -16,7 +17,8 @@ with open("resources/configuration/config.json") as f:
 
 # Getting the discord's bot token that you can find here : https://discordapp.com/developers/applications/me
 with open("resources/configuration/bot.txt", "r") as f:
-    TOKEN = f.readline()
+    TOKEN = f.readline()[:-1]
+    CHANNEL_ID = f.readline()
 
 # Creating the bot client
 client = Bot(command_prefix=CONFIGURATION['cmd_prefix'])
@@ -25,11 +27,18 @@ mgs = []    # Empty list to put all the messages in the log
 times = {}  # Stores each datetime by members where a correct 'Amen' has been said
 fails = {}  # Stores the datime by members of the failed 'Amen' (said too soon or too late)
 
+def get_channel_from_context(context):
+    sent_channel = context.message.channel
+    all_channels = sent_channel.server.channels
+    for channel in all_channels:
+        if channel.id == CHANNEL_ID:
+            return channel
+    return sent_channel
 
 async def fill_times(context):
     """ Fill the ``times`` variable with data retrieved from the channel's messages history."""
     # We get the last max_msg messages from the channel where the command has been called
-    async for x in client.logs_from(context.message.channel, CONFIGURATION['max_msg']):
+    async for x in client.logs_from(get_channel_from_context(context), CONFIGURATION['max_msg']):
         if (x.content != None):
             # We filter and store the messages containing 'amen' and not sent by a bot
             if "amen" in x.content.lower():
@@ -39,25 +48,6 @@ async def fill_times(context):
                         u_times = times.setdefault(x.author, [])
                         u_times.append(x.timestamp)
 
-
-@client.command(pass_context=True)
-async def amenStats(context):
-    """ The first command to show the different stats """
-    await fill_times(context)
-    
-    # We clear the figure and create a new one
-    plt.clf()
-    fig = plt.figure()
-
-    # We call the 3 methods that create the graphs
-    plt_temporal(mgs, fig, my_flocks)
-    plt_fail(mgs, fig, my_flocks, fails)
-    plt_streak(times, fig, my_flocks)
-
-    # We store it in a png and we send it
-    f = plt.gcf()
-    f.savefig(CONFIGURATION['picture_name'])
-    await client.send_file(context.message.channel, CONFIGURATION['picture_name'])
 
 def plt_temporel(mgs, fig):
     """ Function used to plot the first graph : the monthly amount of correct 'amen' said """
@@ -244,8 +234,7 @@ async def failsAmount(context, *player):
     if (times == {} or mgs == []):
         await fill_times(context)
 
-    global fails 
-    fails = gather_fails(mgs, fails)
+    gather_fails(mgs)
 
     # Variable used to check if noone has been found
     found = False
@@ -262,6 +251,26 @@ async def failsAmount(context, *player):
         await client.say(player + " n'a pas été trouvé parmis les membres de ce channel !")
 
 #TODO create a command that displays only the temporal graph by chosing the starting and ending month by default all the period is shown
+
+@client.command(pass_context=True)
+async def amenStats(context):
+    """ The first command to show the different stats """
+    print("*** the command !amenStats has been requested ***")
+    await fill_times(context)
+    
+    # We clear the figure and create a new one
+    plt.clf()
+    fig = plt.figure()
+
+    # We call the 3 methods that create the graphs
+    plt_temporel(mgs, fig)
+    plt_fail(mgs, fig)
+    plt_streak(times, fig)
+
+    # We store it in a png and we send it
+    f = plt.gcf()
+    f.savefig(CONFIGURATION['picture_name'])
+    await client.send_file(context.message.channel, CONFIGURATION['picture_name'])
 
 
 # Starts the bot
