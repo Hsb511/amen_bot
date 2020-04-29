@@ -73,16 +73,16 @@ def plt_temporel(mgs, fig):
     temp_plot.set_xticklabels([str(half_date.month) + " / " + str(half_date.year)[2:5] for half_date in half_dates], rotation=45, fontsize=8, horizontalalignment="center")
     temp_plot.set_title("Répartition temporelle des 'Amen' dits sur ce channel discord")
     temp_plot.set_xlabel("mois")
-    temp_plot.set_yticks(np.arange(1, 22, step=2))
-    temp_plot.set_yticklabels(np.arange(1, 22, step=2), fontsize=8,)
+    temp_plot.set_yticks(np.arange(1, 30, step=4))
+    temp_plot.set_yticklabels(np.arange(1, 30, step=4), fontsize=8,)
     temp_plot.set_ylabel("nombre de 'Amen' par mois")
 
     for my_flock in CONFIGURATION['flocks']:
         for flock in flocks:
             if (my_flock in str(flock)):
-                temp_plot.plot(dates, flocks[flock], marker='+', linestyle='-', label=str(flock).split("#")[0])
+                temp_plot.plot(dates, flocks[flock], marker='+', linestyle='-', label=str(flock).split("#")[0] + ": "+str(sum(flocks[flock])))
                 break
-    temp_plot.legend(ncol=2)
+    temp_plot.legend(ncol=2, prop={'size': 6})
     temp_plot.grid(True)
     plt.subplots_adjust(wspace= 1.0)
 
