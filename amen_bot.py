@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import time, datetime, calendar
 import numpy as np
 import pytz
+from tzlocal import get_localzone
 
 
 # Load the bot's configuration
@@ -35,18 +36,38 @@ def get_channel_from_context(context):
             return channel
     return sent_channel
 
+def is_time_fail(time):
+    hours = time.hour
+    minutes = time.minute
+    jet_lag = int(str(time.astimezone(get_localzone()).utcoffset())[0])
+    if (hours + jet_lag == 23) and (minutes == 22 or minutes == 24 or minutes == 25):
+        return True
+    else:
+        return False
+
+def is_time_valid(time):
+    hours = time.hour
+    minutes = time.minute
+    jet_lag = int(str(time.astimezone(get_localzone()).utcoffset())[0])
+    if (hours + jet_lag == 23) and (minutes == 23):
+        return True
+    else:
+        return False
+
+
 async def fill_times(context):
     """ Fill the ``times`` variable with data retrieved from the channel's messages history."""
+    print("*** filling times ***")
     # We get the last max_msg messages from the channel where the command has been called
     async for x in client.logs_from(get_channel_from_context(context), CONFIGURATION['max_msg']):
         if (x.content != None):
             # We filter and store the messages containing 'amen' and not sent by a bot
-            if "amen" in x.content.lower():
+            if "amen" in x.content.lower() and not "!amen" in x.content.lower():
                 if str(x.author) not in CONFIGURATION['excluded_users']:
                     mgs.append(x)
-                    if not ((x.timestamp.minute == 22 and x.timestamp.hour == 22) or 'amen+' in x.content.lower() or 'amen +' in x.content.lower() or '!amen' in x.content):
-                        u_times = times.setdefault(x.author, [])
-                        u_times.append(x.timestamp)
+                    u_times = times.setdefault(x.author, [])
+                    u_times.append(x.timestamp)
+    print("*** times gathered ***")
 
 
 def plt_temporel(mgs, fig):
@@ -125,20 +146,22 @@ def gather_fails(mgs):
 
         # We gather the authors
         for message in mgs:
-            if not message.author in fails and str(message.author) != '23-robot#3554':
+            if not message.author in fails and str(message.author) not in CONFIGURATION['excluded_users']:
                 fails[message.author] = []
 
 
         # we iterate through all the messages
         for message in reversed(mgs):
-            if str(message.author) != '23-robot#3554':
-                if "amen" in message.content.lower():
-                    if (message.timestamp.hour == 22 or message.timestamp.hour == 23) and message.timestamp.minute == 23:
-                        u_today_amen = today_amen.setdefault(message.author, [])
-                        u_today_amen.append(str(message.timestamp.year)+str(message.timestamp.month)+str(message.timestamp.day))
-                    if message.timestamp.hour == 22 or message.timestamp.hour == 23:
-                        if message.timestamp.minute == 22 or message.timestamp.minute == 24 or message.timestamp.minute == 25:
-                            fails[message.author].append(message.timestamp)
+            if str(message.author) not in CONFIGURATION['excluded_users']:
+                if "amen" in message.content.lower() and "!amen" not in message.content.lower():
+                    u_today_amen = today_amen.setdefault(message.author, [])
+                    string_date = str(message.timestamp.year)+str(message.timestamp.month)+str(message.timestamp.day)
+                    if is_time_fail(message.timestamp):
+                        fails[message.author].append(message.timestamp)
+                        if string_date in u_today_amen:
+                            u_today_amen.remove(string_date)
+                    elif is_time_valid(message.timestamp):
+                        u_today_amen.append(string_date)
 
         # We check that if a correct amen has been said, an amen said shortly after that is not a fail
         for member in fails:
