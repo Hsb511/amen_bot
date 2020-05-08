@@ -51,6 +51,7 @@ async def fill_times(context):
 
 def plt_temporel(mgs, fig):
     """ Function used to plot the first graph : the monthly amount of correct 'amen' said """
+    print("*** drawing temporal graph ***")
     dates = [datetime.date(2017, k, 23) for k in range (1, 13)] + [datetime.date(2018, k, 23) for k in range (1, 13)] + [datetime.date(2019, k, 23) for k in range (1, 13)] + [datetime.date(2020, k, 23) for k in range (1, 4)]
     flocks = {}
     for message in mgs:
@@ -85,9 +86,11 @@ def plt_temporel(mgs, fig):
     temp_plot.legend(ncol=2, prop={'size': 6})
     temp_plot.grid(True)
     plt.subplots_adjust(wspace= 1.0)
+    print("*** temporal graph drawn ***")
 
 def plt_fail(mgs, fig):
     """ Function called to display the second graph to show the proportion of errors by members """
+    print("*** drawing fails graph ***")
     fail_plot = fig.add_subplot(2, 2, 3)
     
     # We gather the fails in a global variable "fails" 
@@ -109,12 +112,14 @@ def plt_fail(mgs, fig):
     texts = fail_plot.pie(errors, labels=people, shadow=True, autopct=autopct_format(errors), startangle=90)[1]
     for text in texts:
         text.set_fontsize(8)
-    fail_plot.axis('equal')
+    fail_plot.axis('equal') 
     fail_plot.set_title("Répartition des 'Amens' ratés : \n les 'Amen+' ou ceux à 23:22")
     plt.subplots_adjust(wspace= 1.0)
+    print("*** fails graph drawn ***")
 
 def gather_fails(mgs):
     """ Function to gather failed Amen """
+    print("*** gathering fails ***")
     if fails == {}:
         today_amen = {} # dict of newest correct amen by member
 
@@ -155,14 +160,15 @@ def autopct_format(values):
 
 def plt_streak(times, fig):
     """ Function used to show the best streak e.g. the maximum of consecutive days a correct 'amen' has been said by a member """
+    print("*** Drawing streak graph ***")
     streak_plot = fig.add_subplot(2, 2, 4)
 
     flocks = {}
-
     for flock in times:
         flocks[flock] = [0, times[flock][0], 1]
         for time in times[flock]:
-            if ((flocks[flock][1] - time).days == 0 and (flocks[flock][1] - time).seconds > 86300) or ((flocks[flock][1] - time).days == 1 and (flocks[flock][1] - time).seconds < 61):
+            time_difference = flocks[flock][1] - time
+            if (time_difference.days == 0 and time_difference.seconds > 86300) or (time_difference.days == 1 and time_difference.seconds < 61):
                 flocks[flock][2] += 1
             else:
                 if flocks[flock][0] < flocks[flock][2]:
@@ -186,6 +192,7 @@ def plt_streak(times, fig):
     streak_plot.set_xlabel('Nombre de jours consécutifs')
     for i, v in enumerate(streak):
         streak_plot.text(v + 3, i + .25, str(v), fontweight='bold')
+    print("*** streak graph drawn ***")
 
 @client.command(pass_context=True)
 async def amensAmount(context, *player):
@@ -207,8 +214,6 @@ async def amensAmount(context, *player):
             amensAmount = 1
             # We check all the data : if 2 amens have been said the same day, only one is counted
             for i in range(len(times[flock]) - 1):
-                print(times[flock])
-                print(len(times[flock]))
                 if not (times[flock][i+1].year == times[flock][i].year and times[flock][i+1].month == times[flock][i].month and times[flock][i+1].day == times[flock][i].day):
                     # If it's a "correct" amen
                     if (times[flock][i+1].minute == 23):
