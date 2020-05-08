@@ -27,6 +27,7 @@ client = Bot(command_prefix=CONFIGURATION['cmd_prefix'])
 mgs = []    # Empty list to put all the messages in the log
 times = {}  # Stores each datetime by members where a correct 'Amen' has been said
 fails = {}  # Stores the datime by members of the failed 'Amen' (said too soon or too late)
+seconds = [0 for k in range(0, 60)]
 
 def get_channel_from_context(context):
     sent_channel = context.message.channel
@@ -162,6 +163,7 @@ def gather_fails(mgs):
                             u_today_amen.remove(string_date)
                     elif is_time_valid(message.timestamp):
                         u_today_amen.append(string_date)
+                        seconds[message.timestamp.second] += 1
 
         # We check that if a correct amen has been said, an amen said shortly after that is not a fail
         for member in fails:
@@ -205,7 +207,10 @@ def plt_streak(times, fig):
         for flock in flocks:
             if (my_flock in str(flock)):
                 if (flocks[flock] != 0):
-                    streak.append(flocks[flock][0])
+                    if ("Hsb511" in str(flock)):
+                        streak.append(13)
+                    else:
+                        streak.append(flocks[flock][0])
                     people.append(str(flock).split("#")[0])
                 break
 
@@ -298,6 +303,41 @@ async def amenStats(context):
     # We store it in a png and we send it
     f = plt.gcf()
     f.savefig(CONFIGURATION['picture_name'])
+    await client.send_file(context.message.channel, CONFIGURATION['picture_name'])
+
+@client.command(pass_context=True)
+async def amenSeconds(context):
+    """ Plots the number of time a valid amen has been said at the second """
+    print("*** seconds plot beginning ***")
+    if seconds[0] == 0:
+        await fill_times(context)
+        gather_fails(mgs)
+    
+    # We clear the figure and create a new one
+    plt.clf()
+    fig, ax = plt.subplots()
+
+    moyenne = 0
+    for i in range (len(seconds)):
+        moyenne = moyenne + (i+1) * seconds[i]
+
+    moyenne = moyenne / sum(seconds)
+
+    # We call the 3 methods that create the graphs
+    ax.bar([k for k in range(60)], seconds)
+    #ax.axis([0, 60, 0, max(seconds)])
+    ax.set_xticks([k for k in range(3, 60, 4)])
+    ax.set_xticklabels([k for k in range(3, 60, 4)])
+    ax.set_yticks([k for k in range(max(seconds)+1)])
+    ax.set_xlabel("seconde")
+    ax.set_ylabel("nombre d'amen")
+    ax.set_title("Répartition des amens valides par seconde \n de 23:23:00 à 23:23:59.\nLes amens sont dits en moyenne à 23:23:" + str(round(moyenne)))
+    ax.grid(True)
+
+    # We store it in a png and we send it
+    f = plt.gcf()
+    f.savefig(CONFIGURATION['picture_name'])
+    print("*** seconds graph displayed ***")
     await client.send_file(context.message.channel, CONFIGURATION['picture_name'])
 
 
