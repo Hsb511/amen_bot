@@ -318,7 +318,7 @@ async def amenSeconds(context):
     print(seconds)
     # We clear the figure and create a new one
     plt.clf()
-    fig = plt.figure()
+    fig = plt.figure(figsize=(8,8))
     seconds_by_flock = fig.add_subplot(2, 1, 1)
 
     moyenne = 0
@@ -341,20 +341,21 @@ async def amenSeconds(context):
     cumulated_bars = [0 for k in range(60)]
     for flock in seconds:
         if (flock == CONFIGURATION["flocks"][0]):
-            seconds_by_flock.bar(np.arange(60), tuple(seconds[flock]), width)
+            seconds_by_flock.bar(np.arange(60), tuple(seconds[flock]), width, label=flock)
         else:
-            seconds_by_flock.bar(np.arange(60), tuple(seconds[flock]), width, bottom=cumulated_bars)
+            seconds_by_flock.bar(np.arange(60), tuple(seconds[flock]), width, bottom=cumulated_bars, label=flock)
         cumulated_bars = np.add(cumulated_bars, seconds[flock]).tolist()
     
     #ax.axis([0, 60, 0, max(seconds)])
     seconds_by_flock.set_xticks([k for k in range(3, 60, 4)])
     seconds_by_flock.set_xticklabels([k for k in range(3, 60, 4)])
-    seconds_by_flock.set_yticks([k for k in range(1, maxi+1, 2)])
-    seconds_by_flock.set_yticklabels([k for k in range(1,     maxi+1, 2)])
+    seconds_by_flock.set_yticks([k for k in range(1, maxi + 2, 2)])
+    seconds_by_flock.set_yticklabels([k for k in range(1, maxi + 2, 2)])
     seconds_by_flock.set_xlabel("seconde")
     seconds_by_flock.set_ylabel("nombre d'amen")
     seconds_by_flock.set_title("Répartition des amens valides par seconde \n de 23:23:00 à 23:23:59.\nLes amens sont dits en moyenne à 23:23:" + str(round(moyenne)))
     seconds_by_flock.grid(True)
+    seconds_by_flock.legend(loc='upper right')
 
     # We store it in a png and we send it
     f = plt.gcf()
