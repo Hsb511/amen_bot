@@ -27,7 +27,9 @@ client = Bot(command_prefix=CONFIGURATION['cmd_prefix'])
 mgs = []    # Empty list to put all the messages in the log
 times = {}  # Stores each datetime by members where a correct 'Amen' has been said
 fails = {}  # Stores the datime by members of the failed 'Amen' (said too soon or too late)
-seconds = [0 for k in range(0, 60)]
+seconds = {flock: [] for flock in CONFIGURATION['flocks']}
+for flock in CONFIGURATION['flocks']:
+    seconds[flock] = [0 for k in range(60)]
 
 def get_channel_from_context(context):
     sent_channel = context.message.channel
@@ -163,7 +165,7 @@ def gather_fails(mgs):
                             u_today_amen.remove(string_date)
                     elif is_time_valid(message.timestamp):
                         u_today_amen.append(string_date)
-                        seconds[message.timestamp.second] += 1
+                        seconds[str(message.author).split("#")[0]][message.timestamp.second-1] += 1
 
         # We check that if a correct amen has been said, an amen said shortly after that is not a fail
         for member in fails:
@@ -309,30 +311,50 @@ async def amenStats(context):
 async def amenSeconds(context):
     """ Plots the number of time a valid amen has been said at the second """
     print("*** seconds plot beginning ***")
-    if seconds[0] == 0:
+    if seconds[CONFIGURATION['flocks'][0]][0] == 0:
         await fill_times(context)
         gather_fails(mgs)
     
+    print(seconds)
     # We clear the figure and create a new one
     plt.clf()
-    fig, ax = plt.subplots()
+    fig = plt.figure()
+    seconds_by_flock = fig.add_subplot(2, 1, 1)
 
     moyenne = 0
-    for i in range (len(seconds)):
-        moyenne = moyenne + (i+1) * seconds[i]
+    maxi = 0
+    sumtot = 0
+    
+    for i in range (60):
+        sumi = 0
+        for flock in seconds:
+            sumi = sumi + seconds[flock][i]
+        if maxi < sumi :
+            maxi = sumi
+        moyenne = moyenne + (i+1) * sumi
+        sumtot = sumtot + sumi
 
-    moyenne = moyenne / sum(seconds)
+    moyenne = moyenne / sumtot
+    width = 0.8
 
     # We call the 3 methods that create the graphs
-    ax.bar([k for k in range(60)], seconds)
+    cumulated_bars = [0 for k in range(60)]
+    for flock in seconds:
+        if (flock == CONFIGURATION["flocks"][0]):
+            seconds_by_flock.bar(np.arange(60), tuple(seconds[flock]), width)
+        else:
+            seconds_by_flock.bar(np.arange(60), tuple(seconds[flock]), width, bottom=cumulated_bars)
+        cumulated_bars = np.add(cumulated_bars, seconds[flock]).tolist()
+    
     #ax.axis([0, 60, 0, max(seconds)])
-    ax.set_xticks([k for k in range(3, 60, 4)])
-    ax.set_xticklabels([k for k in range(3, 60, 4)])
-    ax.set_yticks([k for k in range(max(seconds)+1)])
-    ax.set_xlabel("seconde")
-    ax.set_ylabel("nombre d'amen")
-    ax.set_title("Répartition des amens valides par seconde \n de 23:23:00 à 23:23:59.\nLes amens sont dits en moyenne à 23:23:" + str(round(moyenne)))
-    ax.grid(True)
+    seconds_by_flock.set_xticks([k for k in range(3, 60, 4)])
+    seconds_by_flock.set_xticklabels([k for k in range(3, 60, 4)])
+    seconds_by_flock.set_yticks([k for k in range(1, maxi+1, 2)])
+    seconds_by_flock.set_yticklabels([k for k in range(1,     maxi+1, 2)])
+    seconds_by_flock.set_xlabel("seconde")
+    seconds_by_flock.set_ylabel("nombre d'amen")
+    seconds_by_flock.set_title("Répartition des amens valides par seconde \n de 23:23:00 à 23:23:59.\nLes amens sont dits en moyenne à 23:23:" + str(round(moyenne)))
+    seconds_by_flock.grid(True)
 
     # We store it in a png and we send it
     f = plt.gcf()
