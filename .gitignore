@@ -7,3 +7,7 @@ __pycache__/
 
 # VSCode project files
 .vscode/
+
+# local configuration
+*.png
+resources/configuration/bot.txt
