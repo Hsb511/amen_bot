@@ -33,7 +33,7 @@ for flock in CONFIGURATION['flocks']:
 
 def get_channel_from_context(context):
     sent_channel = context.message.channel
-    all_channels = sent_channel.server.channels
+    all_channels = sent_channel.guild.channels
     for channel in all_channels:
         if channel.id == CHANNEL_ID:
             return channel
@@ -62,7 +62,7 @@ async def fill_times(context):
     """ Fill the ``times`` variable with data retrieved from the channel's messages history."""
     print("*** filling times ***")
     # We get the last max_msg messages from the channel where the command has been called
-    async for x in client.logs_from(get_channel_from_context(context), CONFIGURATION['max_msg']):
+    async for x in get_channel_from_context(context).history(limit=CONFIGURATION['max_msg']):
         if (x.content != None):
             # We filter and store the messages containing 'amen' and not sent by a bot
             if "amen" in x.content.lower() and not "!amen" in x.content.lower():
@@ -305,7 +305,7 @@ async def amenStats(context):
     # We store it in a png and we send it
     f = plt.gcf()
     f.savefig(CONFIGURATION['picture_name'])
-    await client.send_file(context.message.channel, CONFIGURATION['picture_name'])
+    await get_channel_from_context(context).send(file=discord.File(CONFIGURATION['picture_name']))
 
 @client.command(pass_context=True)
 async def amenSeconds(context):
@@ -361,7 +361,8 @@ async def amenSeconds(context):
     f = plt.gcf()
     f.savefig(CONFIGURATION['picture_name'])
     print("*** seconds graph displayed ***")
-    await client.send_file(context.message.channel, CONFIGURATION['picture_name'])
+    png = open(CONFIGURATION['picture_name'], 'r+') 
+    await get_channel_from_context(context).send(file=discord.File(CONFIGURATION['picture_name']))
 
 
 # Starts the bot
