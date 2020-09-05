@@ -11,5 +11,5 @@ The main commands are :
 - **!amenSeconds** : displays a graph that plots the amount of valid said at each seconds of the minute 23:23
 
 # Technical points
-This bot works with python 3.6 and mainly relies on [discord](https://pypi.org/project/discord.py/) (version 0.16.12) and [matplotlib.pyplot](https://matplotlib.org/2.2.3/) (version 2.2.3)
+This bot works with python 3.6 and mainly relies on [discord](https://pypi.org/project/discord.py/) (version 1.4.1) and [matplotlib.pyplot](https://matplotlib.org/2.2.3/) (version 2.2.3)
 To run a python bot, you just have to type `python amen_bot.py` in a bash on Linux or the cmd for Windows with python 3.6 and the libraries installed
