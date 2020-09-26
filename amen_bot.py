@@ -76,7 +76,7 @@ async def fill_times(context):
 def plt_temporel(mgs, fig):
     """ Function used to plot the first graph : the monthly amount of correct 'amen' said """
     print("*** drawing temporal graph ***")
-    dates = [datetime.date(2017, k, 23) for k in range (1, 13)] + [datetime.date(2018, k, 23) for k in range (1, 13)] + [datetime.date(2019, k, 23) for k in range (1, 13)] + [datetime.date(2020, k, 23) for k in range (1, 4)]
+    dates = [datetime.date(2018, k, 23) for k in range (1, 13)] + [datetime.date(2019, k, 23) for k in range (1, 13)] + [datetime.date(2020, k, 23) for k in range (1, 13)]
     flocks = {}
     for message in mgs:
         if not message.author in flocks and str(message.author) not in CONFIGURATION['excluded_users']:
@@ -85,7 +85,7 @@ def plt_temporel(mgs, fig):
     for message in reversed(mgs):
         if str(message.author) not in CONFIGURATION['excluded_users'] and message.created_at.minute == 23:
             try:
-                flocks[message.author][(message.created_at.year - 2017) * 12 + message.created_at.month - 1] += 1
+                flocks[message.author][(message.created_at.year - 2018) * 12 + message.created_at.month - 1] += 1
             except:
                 print("une erreur est survenue")
 
@@ -98,8 +98,8 @@ def plt_temporel(mgs, fig):
     temp_plot.set_xticklabels([str(half_date.month) + " / " + str(half_date.year)[2:5] for half_date in half_dates], rotation=45, fontsize=8, horizontalalignment="center")
     temp_plot.set_title("Répartition temporelle des 'Amen' dits sur ce channel discord")
     temp_plot.set_xlabel("mois")
-    temp_plot.set_yticks(np.arange(1, 30, step=4))
-    temp_plot.set_yticklabels(np.arange(1, 30, step=4), fontsize=8,)
+    temp_plot.set_yticks(np.arange(1, 36, step=4))
+    temp_plot.set_yticklabels(np.arange(1, 36, step=4), fontsize=8,)
     temp_plot.set_ylabel("nombre de 'Amen' par mois")
 
     for my_flock in CONFIGURATION['flocks']:
