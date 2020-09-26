@@ -69,7 +69,7 @@ async def fill_times(context):
                 if str(x.author) not in CONFIGURATION['excluded_users']:
                     mgs.append(x)
                     u_times = times.setdefault(x.author, [])
-                    u_times.append(x.timestamp)
+                    u_times.append(x.created_at)
     print("*** times gathered ***")
 
 
@@ -83,9 +83,9 @@ def plt_temporel(mgs, fig):
             flocks[message.author] = [0 for k in range(len(dates))]
 
     for message in reversed(mgs):
-        if str(message.author) not in CONFIGURATION['excluded_users'] and message.timestamp.minute == 23:
+        if str(message.author) not in CONFIGURATION['excluded_users'] and message.created_at.minute == 23:
             try:
-                flocks[message.author][(message.timestamp.year - 2017) * 12 + message.timestamp.month - 1] += 1
+                flocks[message.author][(message.created_at.year - 2017) * 12 + message.created_at.month - 1] += 1
             except:
                 print("une erreur est survenue")
 
@@ -154,18 +154,19 @@ def gather_fails(mgs):
 
 
         # we iterate through all the messages
+        print(seconds)
         for message in reversed(mgs):
             if str(message.author) not in CONFIGURATION['excluded_users']:
                 if "amen" in message.content.lower() and "!amen" not in message.content.lower():
                     u_today_amen = today_amen.setdefault(message.author, [])
-                    string_date = str(message.timestamp.year)+str(message.timestamp.month)+str(message.timestamp.day)
-                    if is_time_fail(message.timestamp):
-                        fails[message.author].append(message.timestamp)
+                    string_date = str(message.created_at.year)+str(message.created_at.month)+str(message.created_at.day)
+                    if is_time_fail(message.created_at):
+                        fails[message.author].append(message.created_at)
                         if string_date in u_today_amen:
                             u_today_amen.remove(string_date)
-                    elif is_time_valid(message.timestamp):
+                    elif is_time_valid(message.created_at):
                         u_today_amen.append(string_date)
-                        seconds[str(message.author).split("#")[0]][message.timestamp.second-1] += 1
+                        seconds[str(message.author).split("#")[0]][message.created_at.second-1] += 1
 
         # We check that if a correct amen has been said, an amen said shortly after that is not a fail
         for member in fails:
